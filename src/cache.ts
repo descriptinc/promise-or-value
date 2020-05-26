@@ -8,10 +8,13 @@
 
 import { PromiseOrValue } from './type';
 
-export type PromiseOrValueMap<K, V> = CacheLike<K, PromiseOrValue<V>>;
+export type PromiseOrValueMapLike<K, V> = {
+  get(key: K): PromiseOrValue<V> | undefined;
+  set(key: K, value: PromiseOrValue<V>): void;
+};
 
 export function getOrAdd<K, V>(
-  cache: PromiseOrValueMap<K, V>,
+  cache: PromiseOrValueMapLike<K, V>,
   key: K,
   compute: (key: K) => PromiseOrValue<V>,
 ): PromiseOrValue<V> {
@@ -19,18 +22,14 @@ export function getOrAdd<K, V>(
   if (existing) {
     return existing;
   }
-  const resultOrPromise = compute(key);
-  cache.set(key, resultOrPromise);
+  let resultOrPromise = compute(key);
   if (resultOrPromise instanceof Promise) {
-    return resultOrPromise.then((result) => {
+    // Return a promise that resolves after the cache has been updated
+    resultOrPromise = resultOrPromise.then((result) => {
       cache.set(key, result);
       return result;
     });
   }
+  cache.set(key, resultOrPromise);
   return resultOrPromise;
 }
-
-export type CacheLike<K, V> = {
-  get(key: K): V | undefined;
-  set(key: K, value: V): void;
-};
