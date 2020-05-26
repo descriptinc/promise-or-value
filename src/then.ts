@@ -14,15 +14,15 @@ const throwingErrorCallback = (e: any) => {
 
 export function then<T, V>(
   value: PromiseOrValue<T>,
-  callback: (t: T, sync?: true) => PromiseOrValue<V>,
-  errorCallback: (error: any) => PromiseOrValue<V> = throwingErrorCallback,
+  onValue: (t: T, sync?: true) => PromiseOrValue<V>,
+  onError: (error: any) => PromiseOrValue<V> = throwingErrorCallback,
 ): PromiseOrValue<V> {
   if (value instanceof Promise) {
-    return value.then(callback).catch(errorCallback);
+    return value.then(onValue).catch(onError);
   }
   try {
-    return callback(value, true);
+    return onValue(value, true);
   } catch (e) {
-    return errorCallback(e);
+    return onError(e);
   }
 }
